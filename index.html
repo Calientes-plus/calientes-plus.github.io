@@ -115,7 +115,8 @@
 			const poster = document.createElement('div');
 			poster.style.position = 'relative';
 			poster.style.cursor = 'pointer';
-			poster.style.height = '100%';
+			poster.style.width = '100%';
+			poster.style.paddingBottom = '56.25%'; // 16:9 aspect ratio
 			const img = document.createElement('img');
 			img.src = thumbUrl(video.id);
 			img.alt = video.title || 'Video thumbnail';
@@ -133,6 +134,7 @@
 			play.style.transform = 'translate(-50%,-50%)';
 			play.style.fontSize = '48px'; play.style.color = 'white';
 			play.style.textShadow = '0 2px 10px rgba(0,0,0,0.6)';
+			play.style.zIndex = '2';
 
 			poster.appendChild(img);
 			poster.appendChild(play);
@@ -196,14 +198,22 @@
 				const res = await fetch('videos.json', {cache: 'no-cache'});
 				if(res.ok){
 					const remote = await res.json();
-					if(Array.isArray(remote) && remote.length>0) list = remote;
+					if(Array.isArray(remote) && remote.length>0){
+						console.log('Loaded videos from videos.json:', remote);
+						list = remote;
+					}
+				} else {
+					console.warn('Failed to fetch videos.json: HTTP ' + res.status);
 				}
-			}catch(e){/* ignore and use inline */}
+			}catch(e){
+				console.warn('Error loading videos.json, using inline:', e);
+			}
 
 			if(!list || list.length===0){
 				document.getElementById('feature-title').textContent = 'No videos yet';
 				return;
 			}
+			console.log('Using video list:', list);
 			renderThumbs(list);
 			const idx = pickFeaturedIndex(list);
 			featureVideo(list, idx);
