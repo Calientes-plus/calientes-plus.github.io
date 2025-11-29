@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Video Portfolio</title>
+	<style>
+		:root{--bg:#0f1724;--card:#0b1220;--accent:#ff6b6b;--muted:#9aa4b2;color-scheme:dark}
+		html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#071021 0%,#071627 100%);color:#e6eef8}
+		.wrap{max-width:1100px;margin:32px auto;padding:20px}
+		header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+		header h1{font-size:1.25rem;margin:0}
+		.layout{display:grid;grid-template-columns:1fr 320px;gap:20px}
+		.featured{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:10px}
+		.player{position:relative;padding-top:56.25%;background:#000;border-radius:8px;overflow:hidden}
+		.player iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+		.meta{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+		.meta .title{font-size:1.05rem;font-weight:600}
+		.meta .date{color:var(--muted);font-size:0.9rem}
+		.gallery{background:transparent;padding:12px;border-radius:10px}
+		.thumbs{display:grid;grid-template-columns:1fr;gap:12px;overflow:auto;max-height:65vh;padding-right:6px}
+		.card{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+		.card img{width:110px;height:62px;object-fit:cover;border-radius:6px;flex-shrink:0}
+		.card .cmeta{display:flex;flex-direction:column}
+		.card .ctitle{font-weight:600}
+		.badge{background:var(--accent);color:#071021;padding:4px 8px;border-radius:999px;font-size:0.75rem;font-weight:700}
+		.latest-badge{margin-left:8px}
+		footer{margin-top:26px;color:var(--muted);font-size:0.9rem}
+		@media (max-width:900px){.layout{grid-template-columns:1fr}.thumbs{max-height:220px;grid-template-columns:repeat(3,1fr)}.card{flex-direction:column;align-items:flex-start}.card img{width:100%;height:120px}.gallery{order:2}}
+	</style>
+</head>
+<body>
+	<div class="wrap">
+		<header>
+			<h1>Video Portfolio</h1>
+			<div style="margin-left:auto;color:var(--muted)">Highlight your latest YouTube video</div>
+		</header>
+
+		<main class="layout">
+			<section class="featured">
+				<div id="player" class="player" aria-live="polite">
+					<!-- iframe injected by JS -->
+				</div>
+				<div class="meta">
+					<div>
+						<div id="feature-title" class="title">Loading...</div>
+						<div id="feature-desc" class="date"></div>
+					</div>
+					<div id="feature-badge" class="badge" style="display:none">Latest</div>
+				</div>
+			</section>
+
+			<aside class="gallery">
+				<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+					<strong>Videos</strong>
+					<small style="color:var(--muted)">Click a thumbnail to feature</small>
+				</div>
+				<div id="thumbs" class="thumbs" role="list"></div>
+			</aside>
+		</main>
+
+		<footer>
+			Tip: To add a new video, edit the `videos` array inside the script at the bottom of this file. Place the newest video first or set `latest: true` for it.
+		</footer>
+	</div>
+
+	<script>
+		// --- Video data loading ---
+		// Try to load `videos.json` from the same folder. If it fails, fall back to the inline `videosInline`.
+		const videosInline = [
+			{ id: 'M7lc1UVf-VE', title: 'Example: YouTube API Demo', description: 'Replace with your video description.', date: '2025-11-29', latest: true }
+		];
+
+		// Utility: build thumbnail URL from YouTube id
+		function thumbUrl(id){ return `https://img.youtube.com/vi/${id}/hqdefault.jpg`; }
+
+		// Choose the featured video: first with latest===true, otherwise first in array
+		function pickFeaturedIndex(list){
+			const idx = list.findIndex(v => v.latest === true);
+			return idx >= 0 ? idx : 0;
+		}
+
+		// Create and insert a sandboxed iframe for a YouTube embed when requested.
+		// We use youtube-nocookie.com and parameters to minimize branding/links.
+		// Note: It's not possible to 100% prevent users from reaching YouTube (it's external content).
+		// These measures reduce obvious links and block top-level navigation from the iframe in
+		// many browsers by omitting `allow-top-navigation` from the sandbox, but they may affect
+		// some player features (fullscreen, keyboard controls). Test in your target browsers.
+		function createIframeFor(video){
+			const iframe = document.createElement('iframe');
+			const params = new URLSearchParams({
+				rel: '0', // don't show related videos from other channels
+				modestbranding: '1', // reduce YouTube logo where possible
+				controls: '1',
+				disablekb: '1',
+				playsinline: '1'
+			});
+			// Use the privacy-enhanced domain
+			iframe.src = `https://www.youtube-nocookie.com/embed/${video.id}?${params.toString()}`;
+			iframe.title = video.title || 'Video';
+			iframe.setAttribute('loading','lazy');
+			iframe.setAttribute('allow','accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+			iframe.setAttribute('allowfullscreen','');
+			// sandbox: allow scripts + same-origin so the player works, but do NOT allow top-level navigation
+			iframe.setAttribute('sandbox','allow-scripts allow-same-origin');
+			return iframe;
+		}
+
+		// The player area will first show a poster (thumbnail + play button). Only when the user clicks
+		// Play do we inject the YouTube iframe. This prevents accidental navigation and avoids loading
+		// external YouTube chrome until requested.
+		function showPlayerPoster(video, index){
+			const player = document.getElementById('player');
+			player.innerHTML = '';
+			const poster = document.createElement('div');
+			poster.style.position = 'relative';
+			poster.style.cursor = 'pointer';
+			poster.style.height = '100%';
+			const img = document.createElement('img');
+			img.src = thumbUrl(video.id);
+			img.alt = video.title || 'Video thumbnail';
+			img.style.width = '100%';
+			img.style.height = '100%';
+			img.style.objectFit = 'cover';
+			img.style.position = 'absolute';
+			img.style.left = '0'; img.style.top = '0';
+			img.style.borderRadius = '6px';
+
+			const play = document.createElement('div');
+			play.innerHTML = '\u25BA';
+			play.style.position = 'absolute';
+			play.style.left = '50%'; play.style.top = '50%';
+			play.style.transform = 'translate(-50%,-50%)';
+			play.style.fontSize = '48px'; play.style.color = 'white';
+			play.style.textShadow = '0 2px 10px rgba(0,0,0,0.6)';
+
+			poster.appendChild(img);
+			poster.appendChild(play);
+			poster.addEventListener('click', ()=>{
+				const iframe = createIframeFor(video);
+				player.innerHTML = '';
+				player.appendChild(iframe);
+				// visual selected state update
+				document.querySelectorAll('#thumbs .card').forEach((c, i)=>{
+					c.style.outline = (i===index ? '2px solid rgba(255,107,107,0.18)' : 'none');
+				});
+				document.getElementById('feature-badge').style.display = (video.latest ? 'inline-block' : 'none');
+			});
+			player.appendChild(poster);
+		}
+
+		// Feature a video: update metadata and show poster (iframe created only on explicit play)
+		function featureVideo(list, index){
+			const v = list[index];
+			if(!v) return;
+			document.getElementById('feature-title').textContent = v.title || '';
+			document.getElementById('feature-desc').textContent = v.description ? v.description : (v.date || '');
+			showPlayerPoster(v, index);
+		}
+
+		// Render thumbnails list
+		function renderThumbs(list){
+			const container = document.getElementById('thumbs');
+			container.innerHTML = '';
+			list.forEach((v, i)=>{
+				const el = document.createElement('div');
+				el.className = 'card';
+				el.setAttribute('role','listitem');
+
+				const img = document.createElement('img');
+				img.src = thumbUrl(v.id);
+				img.alt = v.title || 'Video thumbnail';
+
+				const cm = document.createElement('div');
+				cm.className = 'cmeta';
+				const ct = document.createElement('div'); ct.className = 'ctitle'; ct.textContent = v.title || 'Untitled';
+				const cd = document.createElement('div'); cd.style.color = 'var(--muted)'; cd.style.fontSize='0.85rem'; cd.textContent = v.date || '';
+				cm.appendChild(ct); cm.appendChild(cd);
+
+				el.appendChild(img); el.appendChild(cm);
+
+				if(v.latest){
+					const b = document.createElement('div'); b.className = 'badge latest-badge'; b.textContent = 'Latest';
+					el.appendChild(b);
+				}
+
+				el.addEventListener('click',()=> featureVideo(list, i));
+				container.appendChild(el);
+			});
+		}
+
+		// Initialize: try to fetch videos.json, otherwise use inline list
+		(async function(){
+			let list = videosInline;
+			try{
+				const res = await fetch('videos.json', {cache: 'no-cache'});
+				if(res.ok){
+					const remote = await res.json();
+					if(Array.isArray(remote) && remote.length>0) list = remote;
+				}
+			}catch(e){/* ignore and use inline */}
+
+			if(!list || list.length===0){
+				document.getElementById('feature-title').textContent = 'No videos yet';
+				return;
+			}
+			renderThumbs(list);
+			const idx = pickFeaturedIndex(list);
+			featureVideo(list, idx);
+		})();
+	</script>
+</body>
+</html>
