@@ -12,8 +12,9 @@
 		header h1{font-size:1.25rem;margin:0}
 		.layout{display:grid;grid-template-columns:1fr 320px;gap:20px}
 		.featured{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:10px}
-		.player{position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:8px;overflow:hidden}
-		.player iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+		.player{position:relative;width:100%;padding-bottom:56.25%;background:#000;border-radius:8px;overflow:hidden}
+		.player > *{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+		.player iframe{border:0}
 		.meta{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
 		.meta .title{font-size:1.05rem;font-weight:600}
 		.meta .date{color:var(--muted);font-size:0.9rem}
@@ -113,11 +114,6 @@
 			const player = document.getElementById('player');
 			player.innerHTML = '';
 			const poster = document.createElement('div');
-			poster.style.position = 'absolute';
-			poster.style.top = '0';
-			poster.style.left = '0';
-			poster.style.width = '100%';
-			poster.style.height = '100%';
 			poster.style.cursor = 'pointer';
 			const img = document.createElement('img');
 			img.src = thumbUrl(video.id);
