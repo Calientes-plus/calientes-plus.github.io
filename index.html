@@ -19,23 +19,99 @@
 		.meta .date{color:var(--muted);font-size:0.9rem}
 		.gallery{background:transparent;padding:12px;border-radius:10px}
 		.thumbs{display:grid;grid-template-columns:1fr;gap:12px;overflow:auto;max-height:65vh;padding-right:6px}
-		.card{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+		.card{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);cursor:pointer;border:1px solid rgba(255,255,255,0.08)}
 		.card img{width:110px;height:62px;object-fit:cover;border-radius:6px;flex-shrink:0}
 		.card .cmeta{display:flex;flex-direction:column}
 		.card .ctitle{font-weight:600}
 		.badge{background:var(--accent);color:#071021;padding:4px 8px;border-radius:999px;font-size:0.75rem;font-weight:700}
 		.latest-badge{margin-left:8px}
 		footer{margin-top:26px;color:var(--muted);font-size:0.9rem}
-		@media (max-width:900px){.layout{grid-template-columns:1fr}.thumbs{max-height:220px;grid-template-columns:repeat(3,1fr)}.card{flex-direction:column;align-items:flex-start}.card img{width:100%;height:120px}.gallery{order:2}}
+		@media (max-width:900px){.layout{grid-template-columns:1fr}.thumbs{max-height:220px;grid-template-columns:repeat(3,1fr)}.card{flex-direction:column;align-items:flex-start}.card img{width:100%;height:62px}}
+		
+		/* Password lockscreen styles */
+		#lockscreen {
+			position: fixed;
+			inset: 0;
+			background: rgba(20,25,40,0.85);
+			backdrop-filter: blur(8px);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			z-index: 9999;
+		}
+		.lockscreen-inner {
+			background: rgba(17,19,30,0.96);
+			border-radius: 10px;
+			padding: 38px 30px 28px 30px;
+			min-width: 250px;
+			box-shadow: 0 2px 22px 0 rgba(0,0,0,0.18);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 13px;
+		}
+		.lockscreen-inner input[type="password"] {
+			border: none;
+			outline: none;
+			background: #111729;
+			color: #e6eef8;
+			padding: 10px 12px;
+			border-radius: 5px;
+			width: 170px;
+			margin-bottom: 5px;
+			font-size: 1em;
+		}
+		.lockscreen-inner button {
+			padding: 8px 20px;
+			border-radius: 6px;
+			border: none;
+			background: var(--accent);
+			color: #fff;
+			font-weight: bold;
+			cursor: pointer;
+			font-size: 1em;
+			margin-top: 7px;
+		}
+		.lock-msg {
+			color: var(--muted);
+			font-size: 0.98rem;
+			text-align: center;
+		}
+		.lock-error {
+			color: #ff6b6b;
+			font-size: 0.86rem;
+			margin-top: 4px;
+			height: 1.2em;
+			text-align: center;
+		}
+		body.locked > #main-content {
+			filter: blur(7px) brightness(0.7);
+			pointer-events: none;
+			user-select: none;
+		}
 	</style>
 </head>
-<body>
-	<div class="wrap">
-		<header>
-			<h1>Video Portfolio</h1>
-			<div style="margin-left:auto;color:var(--muted)">Highlight your latest YouTube video</div>
-		</header>
+<body class="locked">
+	<!-- Password Lock Screen -->
+	<div id="lockscreen" aria-modal="true">
+		<div class="lockscreen-inner">
+			<div style="font-size:2em;line-height:1em; margin-bottom: 7px;">🔒</div>
+			<div class="lock-msg">This page is locked.<br>Enter password to view.</div>
+			<form id="lockform" autocomplete="off">
+				<input type="password" id="lockpass" required placeholder="Password" autofocus autocomplete="off" />
+				<br>
+				<button type="submit">Unlock</button>
+				<div class="lock-error" id="lock-error"></div>
+			</form>
+		</div>
+	</div>
 
+	<!-- Main Content Wrapper, will blur when locked -->
+	<div class="wrap" id="main-content">
+		<header>
+			<h1>CALIENTESPLUS</h1>
+			<div style="margin-left:auto;color:var(--muted)">Den seneste calientes plus video</div>
+		</header>
 		<main class="layout">
 			<section class="featured">
 				<div id="player" class="player" aria-live="polite">
@@ -53,18 +129,55 @@
 			<aside class="gallery">
 				<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
 					<strong>Videos</strong>
-					<small style="color:var(--muted)">Click a thumbnail to feature</small>
+					<small style="color:var(--muted)">Andre calientesplus videoer</small>
 				</div>
 				<div id="thumbs" class="thumbs" role="list"></div>
 			</aside>
 		</main>
-
 		<footer>
-			Tip: To add a new video, edit the `videos` array inside the script at the bottom of this file. Place the newest video first or set `latest: true` for it.
+			fra alle os til alle jer
 		</footer>
 	</div>
 
 	<script>
+		// ----------- Simple Lockscreen Logic -----------
+		// Change 'secret123' below to your desired password.
+		const LOCK_PASSWORD = 'secret123';
+		const lockForm = document.getElementById('lockform');
+		const lockInput = document.getElementById('lockpass');
+		const lockError = document.getElementById('lock-error');
+		const lockscreen = document.getElementById('lockscreen');
+		const body = document.body;
+
+		lockForm.addEventListener('submit', function(e){
+			e.preventDefault();
+			if(lockInput.value === LOCK_PASSWORD){
+				lockscreen.style.display='none';
+				body.classList.remove('locked');
+				lockInput.value='';
+				lockError.textContent='';
+			}else{
+				lockError.textContent='Incorrect password.';
+				lockInput.value='';
+				lockInput.focus();
+			}
+		});
+
+		// Enter key on input field
+		lockInput.addEventListener('keydown', function(e){
+			if(e.key === "Enter"){
+				lockForm.dispatchEvent(new Event('submit'));
+			}
+		});
+
+		// Optionally: allow unlocking via URL hash, e.g. index.html#secret123
+		if(location.hash && location.hash.slice(1) === LOCK_PASSWORD){
+			lockscreen.style.display='none';
+			body.classList.remove('locked');
+		}
+
+		// ----------- END Password Lock -------------
+
 		// --- Video data loading ---
 		// Try to load `videos.json` from the same folder. If it fails, fall back to the inline `videosInline`.
 		const videosInline = [
