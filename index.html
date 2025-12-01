@@ -19,10 +19,10 @@
 		.meta .date{color:var(--muted);font-size:0.9rem}
 		.gallery{background:transparent;padding:12px;border-radius:10px}
 		.thumbs{display:grid;grid-template-columns:1fr;gap:12px;overflow:auto;max-height:65vh;padding-right:6px}
-		.card{display:flex;gap:10px;align-items:center;padding:8px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);cursor:pointer;border:1px solid rgba(0,175,240,0.2);transition:all 0.2s ease}
+		.card{display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent);cursor:pointer;border:1px solid rgba(0,175,240,0.2);transition:all 0.2s ease;min-width:0}
 		.card img{width:110px;height:62px;object-fit:cover;border-radius:6px;flex-shrink:0}
-		.card .cmeta{display:flex;flex-direction:column}
-		.card .ctitle{font-weight:600}
+		.card .cmeta{display:flex;flex-direction:column;min-width:0;flex:1}
+		.card .ctitle{font-weight:600;word-break:break-word;overflow-wrap:break-word}
 		.badge{background:var(--accent);color:#000;padding:4px 8px;border-radius:999px;font-size:0.75rem;font-weight:700;box-shadow:0 0 12px rgba(0,175,240,0.4)}
 		.latest-badge{margin-left:8px}
 		footer{margin-top:26px;color:var(--muted);font-size:0.9rem}
