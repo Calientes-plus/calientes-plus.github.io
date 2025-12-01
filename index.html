@@ -98,7 +98,7 @@
 			<div style="font-size:2em;line-height:1em; margin-bottom: 7px;">🔒</div>
 			<div class="lock-msg">Denne side er låst.<br>Indtast adgangskode for at se.</div>
 			<form id="lockform" autocomplete="off">
-				<input type="password" id="lockpass" required placeholder="Password" autofocus autocomplete="off" />
+				<input type="password" id="lockpass" required placeholder="Adgangskode" autofocus autocomplete="off" />
 				<br>
 				<button type="submit">Enter</button>
 				<div class="lock-error" id="lock-error"></div>
@@ -149,8 +149,7 @@
 		const lockscreen = document.getElementById('lockscreen');
 		const body = document.body;
 
-		lockForm.addEventListener('submit', function(e){
-			e.preventDefault();
+		function checkPassword(){
 			if(lockInput.value === LOCK_PASSWORD){
 				lockscreen.style.display='none';
 				body.classList.remove('locked');
@@ -161,12 +160,18 @@
 				lockInput.value='';
 				lockInput.focus();
 			}
+		}
+
+		lockForm.addEventListener('submit', function(e){
+			e.preventDefault();
+			checkPassword();
 		});
 
 		// Enter key on input field
-		lockInput.addEventListener('keydown', function(e){
+		lockInput.addEventListener('keypress', function(e){
 			if(e.key === "Enter"){
-				lockForm.dispatchEvent(new Event('submit'));
+				e.preventDefault();
+				checkPassword();
 			}
 		});
 
